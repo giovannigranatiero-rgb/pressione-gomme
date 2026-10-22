@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14171b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pressione">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Calcolatore Pressione Gomme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: banco da officina — colonna sinistra di parametri a schede, colonna destra fissa con i due manometri e il dettaglio del calcolo */
+:root {
+  --bg: #eef0f2;
+  --panel: #fbfcfd;
+  --ink: #1b2026;
+  --muted: #5d6670;
+  --line: #d3d8de;
+  --brass: #9a6410;
+  --brass-soft: #f3e6cf;
+  --ok: #2f7a4b;
+  --warn: #9a6410;
+  --bad: #b23a2e;
+  --bad-soft: #f7e1de;
+  --warn-soft: #f6ecd9;
+  --ok-soft: #dfefe4;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14171b; --panel: #1c2026; --ink: #e6e9ec; --muted: #9aa3ad; --line: #30363e;
+    --brass: #e0a94a; --brass-soft: #3a2e1a; --ok: #6cc28c; --warn: #e0a94a; --bad: #ef7d70;
+    --bad-soft: #3d2220; --warn-soft: #3a2e1a; --ok-soft: #1d3326; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14171b; --panel: #1c2026; --ink: #e6e9ec; --muted: #9aa3ad; --line: #30363e;
+  --brass: #e0a94a; --brass-soft: #3a2e1a; --ok: #6cc28c; --warn: #e0a94a; --bad: #ef7d70;
+  --bad-soft: #3d2220; --warn-soft: #3a2e1a; --ok-soft: #1d3326; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+:root { padding-top: env(safe-area-inset-top, 0px); }
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+.wx { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+.wx .field { flex: 1 1 180px; }
+.btn { font: inherit; font-size: .9rem; font-weight: 600; min-height: 44px; padding: 0 14px; border-radius: 4px; border: 1px solid var(--brass); background: var(--brass-soft); color: var(--ink); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.btn[disabled] { opacity: .55; cursor: progress; }
+.wxout { font-size: .86rem; margin: 0; padding: 8px 10px; border-radius: 4px; background: var(--bg); border: 1px solid var(--line); }
+.wxout:empty { display: none; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 48px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 20px; }
+header h1 { font-family: var(--f-display); font-weight: 700; font-size: 2.4rem; line-height: 1; letter-spacing: .01em; margin: 0; text-transform: uppercase; text-wrap: balance; }
+header p { margin: 6px 0 0; color: var(--muted); max-width: 68ch; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); gap: 20px; align-items: start; }
+@media (max-width: 880px) { .grid { grid-template-columns: minmax(0, 1fr); } .results { order: -1; position: static; } }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+.mbar { display: none; }
+@media (max-width: 880px) {
+  body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+  header h1 { font-size: 2rem; }
+  .mbar {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: center;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; width: 100%;
+    background: var(--panel); border: 0; border-top: 1px solid var(--line); box-shadow: 0 -6px 18px rgba(0,0,0,.12);
+    padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+    color: var(--ink); font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .mbar div { display: grid; gap: 0; }
+  .mbar b { font-family: var(--f-display); font-weight: 700; font-size: 1.7rem; line-height: 1; font-variant-numeric: tabular-nums; }
+  .mbar b small { font-size: .9rem; font-weight: 500; color: var(--muted); margin-left: 2px; }
+  .mbar span { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .mbar em { font-style: normal; font-family: var(--f-mono); font-size: .74rem; color: var(--brass); }
+}
+.inputs { display: grid; gap: 14px; min-width: 0; }
+fieldset { border: 1px solid var(--line); background: var(--panel); border-radius: 6px; margin: 0; padding: 14px 16px 16px; min-width: 0; display: grid; gap: 12px; }
+legend { font-family: var(--f-display); font-weight: 600; font-size: 1.05rem; text-transform: uppercase; letter-spacing: .08em; padding: 0 6px; color: var(--brass); }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.field { display: grid; gap: 4px; min-width: 0; }
+label, .lbl { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 500; }
+input[type=number], input[type=text], select {
+  width: 100%; font: inherit; font-family: var(--f-mono); font-size: 16px; color: var(--ink);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; min-height: 44px; -webkit-appearance: none; appearance: none;
+}
+input[type=text] { font-family: var(--f-body); }
+input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.unit { position: relative; }
+.unit input { padding-right: 38px; }
+.unit span { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-family: var(--f-mono); font-size: .8rem; color: var(--muted); pointer-events: none; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label { display: inline-flex; align-items: center; min-height: 44px; -webkit-tap-highlight-color: transparent; text-transform: none; letter-spacing: 0; font-size: .88rem; color: var(--ink); border: 1px solid var(--line); background: var(--bg); padding: 7px 11px; border-radius: 4px; cursor: pointer; }
+.seg input:checked + label { border-color: var(--brass); background: var(--brass-soft); color: var(--ink); font-weight: 600; }
+.seg input:focus-visible + label { outline: 2px solid var(--brass); outline-offset: 2px; }
+.hint { font-size: .82rem; color: var(--muted); margin: 0; }
+.tire { display: grid; gap: 10px; padding-top: 4px; }
+.tire + .tire { border-top: 1px dashed var(--line); padding-top: 14px; }
+.tire h3 { margin: 0; font-family: var(--f-display); font-weight: 600; font-size: 1.15rem; text-transform: uppercase; letter-spacing: .05em; }
+.search { position: relative; }
+.search ul { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px; list-style: none; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; max-height: 260px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.14); }
+.search li { padding: 11px 10px; border-radius: 4px; cursor: pointer; display: flex; justify-content: space-between; gap: 10px; }
+.search li small { color: var(--muted); font-family: var(--f-mono); font-size: .72rem; white-space: nowrap; }
+.search li[aria-selected="true"], .search li:hover { background: var(--brass-soft); }
+.chip { display: inline-block; font-family: var(--f-mono); font-size: .72rem; padding: 2px 7px; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); }
+.check { display: flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: .9rem; color: var(--ink); }
+.check input { width: 18px; height: 18px; accent-color: var(--brass); }
+
+.results { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); display: grid; gap: 14px; min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.gauge { display: grid; justify-items: center; gap: 2px; text-align: center; }
+.gauge svg { width: 100%; max-width: 180px; height: auto; }
+.g-name { font-family: var(--f-display); font-weight: 600; text-transform: uppercase; letter-spacing: .1em; font-size: .95rem; color: var(--muted); }
+.g-val { font-family: var(--f-display); font-weight: 700; font-size: 2.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.g-val small { font-size: 1.1rem; font-weight: 500; color: var(--muted); margin-left: 2px; }
+.g-psi { font-family: var(--f-mono); font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.kv { display: grid; grid-template-columns: minmax(0,1fr) auto auto; gap: 6px 14px; font-size: .88rem; align-items: baseline; }
+.kv .h { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); text-align: right; }
+.kv .h:first-child { text-align: left; }
+.kv span:not(.h):not(:nth-child(3n+1)) { font-family: var(--f-mono); text-align: right; font-variant-numeric: tabular-nums; }
+.kv .em { color: var(--brass); font-weight: 600; }
+.notes { display: grid; gap: 8px; }
+.note { font-size: .86rem; padding: 8px 10px; border-radius: 4px; border-left: 3px solid; }
+.note.bad { background: var(--bad-soft); border-color: var(--bad); }
+.note.warn { background: var(--warn-soft); border-color: var(--warn); }
+.note.ok { background: var(--ok-soft); border-color: var(--ok); }
+details { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 0 16px; }
+summary { cursor: pointer; padding: 12px 0; font-family: var(--f-display); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+details[open] summary { border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+.formula { font-family: var(--f-mono); font-size: .78rem; background: var(--bg); padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre; }
+.tbl-wrap { overflow-x: auto; margin-bottom: 14px; }
+table { border-collapse: collapse; width: 100%; font-size: .82rem; }
+th, td { padding: 5px 6px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: left; }
+td { font-family: var(--f-mono); }
+td:first-child { font-family: var(--f-body); }
+.src { font-size: .78rem; color: var(--muted); }
+.src a { color: var(--brass); }
+@media (prefers-reduced-motion: no-preference) { .needle { transition: transform .35s ease; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Pressione gomme</h1>
+    <p>Pressione consigliata anteriore e posteriore, basata sulla formula del calcolatore SRAM AXS / Zipp, con in più fondo stradale, meteo, temperatura e controllo del passaggio ruota. I valori iniziali sono un esempio con 77 kg, gravel con Zipp 303 XPLR SW.</p>
+  </header>
+
+  <div class="grid">
+    <form class="inputs" id="form" autocomplete="off">
+      <fieldset>
+        <legend>Peso</legend>
+        <div class="row">
+          <div class="field"><label for="wRider">Ciclista</label><div class="unit"><input type="text" inputmode="decimal" id="wRider" value="77" min="30" max="160" step="0.5"><span>kg</span></div></div>
+          <div class="field"><label for="wBike">Bici</label><div class="unit"><input type="text" inputmode="decimal" id="wBike" value="8.5" min="5" max="35" step="0.1"><span>kg</span></div></div>
+          <div class="field"><label for="wLoad">Carico</label><div class="unit"><input type="text" inputmode="decimal" id="wLoad" value="1.5" min="0" max="40" step="0.5"><span>kg</span></div></div>
+        </div>
+        <p class="hint">Carico: borracce, borse, attrezzi, abbigliamento. Peso totale: <strong id="wTot">87,0 kg</strong></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Ruote e cerchio</legend>
+        <div class="row">
+          <div class="field"><label for="rimPreset">Cerchio</label>
+            <select id="rimPreset">
+              <option value="xplr">Zipp 303 XPLR SW / S (32 mm, hookless)</option>
+              <option value="custom">Altro cerchio (personalizzato)</option>
+            </select>
+          </div>
+          <div class="field"><label for="diam">Diametro ruota</label>
+            <select id="diam"><option value="622">700c / 29" (ISO 622)</option><option value="584">650b / 27,5" (ISO 584)</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="rimW">Canale interno</label><div class="unit"><input type="text" inputmode="decimal" id="rimW" value="32" min="13" max="40" step="0.5"><span>mm</span></div></div>
+          <div class="field"><label for="rimType">Tipo di montaggio</label>
+            <select id="rimType">
+              <option value="303_XPLR">Zipp 303 XPLR (hookless dedicato)</option>
+              <option value="STRAIGHT_SIDE">Tubeless hookless</option>
+              <option value="CROCHET">Tubeless uncinato (hooked)</option>
+              <option value="TUBES">Con camera d'aria</option>
+              <option value="TUBULAR">Tubolare</option>
+            </select>
+          </div>
+          <div class="field"><label for="rimMax">Pressione max cerchio</label><div class="unit"><input type="text" inputmode="decimal" id="rimMax" value="3.45" min="1" max="10" step="0.05"><span>bar</span></div></div>
+        </div>
+        <p class="hint" id="rimHint">Pressione massima incisa sul cerchio. Per lo Zipp 303 XPLR è 3,45 bar (50 psi).</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Pneumatici</legend>
+        <div class="tire" data-pos="F">
+          <h3>Anteriore</h3>
+          <div class="field search"><label for="tsF">Cerca il modello</label>
+            <input type="text" id="tsF" role="combobox" aria-expanded="false" aria-controls="tlF" aria-autocomplete="list" placeholder="es. cinturato, terra speed, gp5000">
+            <ul id="tlF" role="listbox" hidden></ul>
+          </div>
+          <div class="row">
+            <div class="field"><label for="twF">Sezione nominale</label><div class="unit"><input type="text" inputmode="decimal" id="twF" value="45" min="18" max="70" step="1"><span>mm</span></div></div>
+            <div class="field"><label for="tcF">Carcassa</label>
+              <select id="tcF"><option value="THIN">Leggera / race</option><option value="STANDARD" selected>Standard</option><option value="REINFORCED">Rinforzata</option><option value="DOUBLE">Doppia / downhill</option></select>
+            </div>
+            <div class="field"><label for="clF">Passaggio forcella</label><div class="unit"><input type="text" inputmode="decimal" id="clF" value="46" min="0" max="80" step="0.5"><span>mm</span></div></div>
+          </div>
+          <p class="hint" id="tnF"></p>
+        </div>
+        <div class="tire" data-pos="R">
+          <h3>Posteriore</h3>
+          <label class="check" for="same"><input type="checkbox" id="same" checked>Stesso modello dell'anteriore</label>
+          <div class="field search" id="searchR"><label for="tsR">Cerca il modello</label>
+            <input type="text" id="tsR" role="combobox" aria-expanded="false" aria-controls="tlR" aria-autocomplete="list" placeholder="es. g-one, pathfinder">
+            <ul id="tlR" role="listbox" hidden></ul>
+          </div>
+          <div class="row">
+            <div class="field"><label for="twR">Sezione nominale</label><div class="unit"><input type="text" inputmode="decimal" id="twR" value="40" min="18" max="70" step="1"><span>mm</span></div></div>
+            <div class="field"><label for="tcR">Carcassa</label>
+              <select id="tcR"><option value="THIN">Leggera / race</option><option value="STANDARD" selected>Standard</option><option value="REINFORCED">Rinforzata</option><option value="DOUBLE">Doppia / downhill</option></select>
+            </div>
+            <div class="field"><label for="clR">Passaggio telaio</label><div class="unit"><input type="text" inputmode="decimal" id="clR" value="46" min="0" max="80" step="0.5"><span>mm</span></div></div>
+          </div>
+          <p class="hint" id="tnR"></p>
+        </div>
+        <p class="hint">Passaggio ruota: larghezza massima dichiarata dal costruttore (misurata montata). Lascia 0 per non fare il controllo.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Fondo stradale</legend>
+        <div class="seg" role="radiogroup" aria-label="Fondo stradale">
+          <input type="radio" name="surf" id="s1" value="1.03"><label for="s1">Asfalto liscio</label>
+          <input type="radio" name="surf" id="s2" value="1.00"><label for="s2">Asfalto normale</label>
+          <input type="radio" name="surf" id="s3" value="0.96"><label for="s3">Asfalto rovinato</label>
+          <input type="radio" name="surf" id="s4" value="0.94"><label for="s4">Misto asfalto/sterrato</label>
+          <input type="radio" name="surf" id="s5" value="0.90" checked><label for="s5">Gravel veloce compatto</label>
+          <input type="radio" name="surf" id="s6" value="0.85"><label for="s6">Gravel smosso / tecnico</label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Condizioni climatiche</legend>
+        <div class="wx">
+          <div class="field"><label for="wxCity">Meteo in tempo reale</label><input type="text" id="wxCity" placeholder="Località, es. Parma" enterkeyhint="search" autocapitalize="words"></div>
+          <button type="button" class="btn" id="wxSearch">Cerca</button>
+          <button type="button" class="btn" id="wxGeo">Posizione attuale</button>
+        </div>
+        <p class="wxout" id="wxOut" aria-live="polite"></p>
+        <div class="seg" role="radiogroup" aria-label="Condizioni del fondo">
+          <input type="radio" name="wet" id="m1" value="1.00" checked><label for="m1">Asciutto</label>
+          <input type="radio" name="wet" id="m2" value="0.95"><label for="m2">Umido</label>
+          <input type="radio" name="wet" id="m3" value="0.90"><label for="m3">Bagnato / pioggia</label>
+          <input type="radio" name="wet" id="m4" value="0.86"><label for="m4">Fango</label>
+        </div>
+        <div class="row">
+          <div class="field"><label for="tIn">Temperatura dove gonfi</label><div class="unit"><input type="number" inputmode="numeric" pattern="-?[0-9]*" id="tIn" value="20" min="-20" max="45" step="1"><span>°C</span></div></div>
+          <div class="field"><label for="tOut">Temperatura in uscita</label><div class="unit"><input type="number" inputmode="numeric" pattern="-?[0-9]*" id="tOut" value="12" min="-20" max="45" step="1"><span>°C</span></div></div>
+        </div>
+        <p class="hint">Il meteo imposta da solo fondo asciutto/umido/bagnato e la temperatura in uscita, e si aggiorna a ogni apertura dell'app. Puoi sempre correggerli a mano. Se gonfi al caldo ed esci al freddo l'aria si contrae e perdi pressione: il calcolatore ti dice quanto gonfiare in garage per avere la pressione giusta in strada.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Priorità</legend>
+        <div class="seg" role="radiogroup" aria-label="Priorità">
+          <input type="radio" name="pri" id="p1" value="0.96"><label for="p1">Grip e comfort</label>
+          <input type="radio" name="pri" id="p2" value="1.00" checked><label for="p2">Bilanciato</label>
+          <input type="radio" name="pri" id="p3" value="1.04"><label for="p3">Scorrevolezza</label>
+        </div>
+      </fieldset>
+    </form>
+
+    <aside class="results" aria-live="polite">
+      <div class="card">
+        <div class="gauges">
+          <div class="gauge" id="gF"></div>
+          <div class="gauge" id="gR"></div>
+        </div>
+        <div class="kv" id="kv"></div>
+      </div>
+      <div class="notes" id="notes"></div>
+      <details id="calc">
+        <summary>Come è calcolato</summary>
+        <div class="formula">P [psi] = 10^8,68467 × C^−1,30456
+        × (1 + (2,2 × M − 180) × 0,0025)
+        × K_pos × K_cerchio × K_fondo × K_meteo × K_carcassa × K_priorità
+C = 4π² × (D/2 + L/2) × (L/2)   L = larghezza stimata [mm]
+L = sezione + 0,4 × (canale − canale ETRTO di riferimento)
+M = peso totale [kg]   D = diametro ISO [mm]</div>
+        <div class="tbl-wrap"><table id="tbl"></table></div>
+        <p class="src">Base del modello: formula del calcolatore pressioni SRAM AXS, ricostruita dal codice della web app e pubblicata con licenza MIT nel progetto <a href="https://github.com/StefanOOE/mcp-tirepressure" target="_blank" rel="noopener">mcp-tirepressure</a>. Coefficienti SRAM: posizione (0,94 / 1), cerchio, carcassa, asfalto 1,00, gravel 0,90, bagnato 0,90. Aggiunte di questo calcolatore, da tarare con l'esperienza: gradi intermedi del fondo, umido e fango, priorità, correzione per la temperatura (legge dei gas) e controllo del passaggio ruota. Non è un prodotto SRAM. Rispetta sempre la pressione massima di cerchio e pneumatico.</p>
+      </details>
+    </aside>
+  </div>
+</div>
+
+<button type="button" class="mbar" id="mbar" aria-label="Torna ai manometri"></button>
+
+<script>
+(function () {
+  "use strict";
+  // ---------- Banca dati pneumatici (modello → categoria e carcassa tipica) ----------
+  // xplr: approvato per Zipp 303 XPLR secondo la lista nota a fine 2025
+  const TIRES = [
+    ["Pirelli", "Cinturato Gravel H", "gravel", "STANDARD"],
+    ["Pirelli", "Cinturato Gravel M", "gravel", "STANDARD"],
+    ["Pirelli", "Cinturato Gravel S", "gravel", "STANDARD"],
+    ["Pirelli", "Cinturato Gravel RC", "gravel", "STANDARD"],
+    ["Pirelli", "Cinturato Velo TLR", "road", "REINFORCED"],
+    ["Pirelli", "P Zero Race TLR", "road", "STANDARD"],
+    ["Pirelli", "P Zero Race TLR RS", "road", "THIN"],
+    ["Continental", "Terra Speed", "gravel", "STANDARD"],
+    ["Continental", "Terra Trail", "gravel", "STANDARD"],
+    ["Continental", "Terra Adventure", "gravel", "REINFORCED"],
+    ["Continental", "Grand Prix 5000 S TR", "road", "STANDARD"],
+    ["Continental", "Grand Prix 5000 TT TR", "road", "THIN"],
+    ["Continental", "Grand Prix 5000 AS TR", "road", "STANDARD"],
+    ["Schwalbe", "G-One RS Pro", "gravel", "THIN", 1],
+    ["Schwalbe", "G-One R Pro", "gravel", "THIN", 1],
+    ["Schwalbe", "G-One Speed", "gravel", "STANDARD", 1],
+    ["Schwalbe", "G-One Allround", "gravel", "STANDARD", 1],
+    ["Schwalbe", "G-One Bite", "gravel", "STANDARD", 1],
+    ["Schwalbe", "G-One Overland", "gravel", "REINFORCED", 1],
+    ["Schwalbe", "Pro One TLE", "road", "STANDARD"],
+    ["Schwalbe", "Pro One TT", "road", "THIN"],
+    ["Goodyear", "XPLR Slick", "gravel", "STANDARD", 1],
+    ["Goodyear", "XPLR Inter", "gravel", "STANDARD", 1],
+    ["Goodyear", "Connector", "gravel", "STANDARD"],
+    ["Goodyear", "Eagle F1 R", "road", "STANDARD"],
+    ["Zipp", "G40 XPLR", "gravel", "STANDARD", 1],
+    ["Specialized", "Pathfinder Pro", "gravel", "STANDARD"],
+    ["Specialized", "Tracer Pro", "gravel", "STANDARD"],
+    ["Specialized", "S-Works Turbo", "road", "STANDARD"],
+    ["Specialized", "S-Works Turbo RapidAir", "road", "THIN"],
+    ["Vittoria", "Terreno Dry", "gravel", "STANDARD"],
+    ["Vittoria", "Terreno Mix", "gravel", "STANDARD"],
+    ["Vittoria", "Terreno Zero", "gravel", "STANDARD"],
+    ["Vittoria", "Corsa Pro", "road", "THIN"],
+    ["Vittoria", "Corsa N.EXT", "road", "STANDARD"],
+    ["Vittoria", "Rubino Pro", "road", "REINFORCED"],
+    ["Michelin", "Power Gravel", "gravel", "STANDARD"],
+    ["Michelin", "Power Cup TLR", "road", "STANDARD"],
+    ["Maxxis", "Rambler", "gravel", "STANDARD"],
+    ["Maxxis", "Receptor", "gravel", "STANDARD"],
+    ["Maxxis", "Reaver", "gravel", "STANDARD"],
+    ["WTB", "Byway", "gravel", "STANDARD"],
+    ["WTB", "Riddler", "gravel", "STANDARD"],
+    ["WTB", "Raddler", "gravel", "STANDARD"],
+    ["WTB", "Vulpine", "gravel", "STANDARD"],
+    ["Panaracer", "GravelKing SS", "gravel", "STANDARD"],
+    ["Panaracer", "GravelKing SK", "gravel", "STANDARD"],
+    ["Panaracer", "GravelKing SK Plus", "gravel", "REINFORCED"],
+    ["Rene Herse", "Extralight", "gravel", "THIN", 1],
+    ["Rene Herse", "Standard", "gravel", "STANDARD", 1],
+    ["Rene Herse", "Endurance", "gravel", "REINFORCED", 1],
+    ["IRC", "Boken", "gravel", "STANDARD"],
+    ["Hutchinson", "Caracal Race", "gravel", "STANDARD"],
+    ["Hutchinson", "Tundra", "gravel", "STANDARD"],
+    ["Teravail", "Rutland Light and Supple", "gravel", "THIN"],
+    ["Teravail", "Rutland Durable", "gravel", "REINFORCED"],
+    ["Challenge", "Getaway", "gravel", "STANDARD"],
+    ["Challenge", "Strada Bianca", "gravel", "STANDARD"]
+  ].map(([brand, model, cat, casing, xplr]) => ({ brand, model, cat, casing, xplr: !!xplr, name: brand + " " + model }));
+
+  const CASING_IT = { THIN: "leggera", STANDARD: "standard", REINFORCED: "rinforzata", DOUBLE: "doppia" };
+  const K_CASING = { THIN: 1.025, STANDARD: 1.0, REINFORCED: 0.95, DOUBLE: 0.9 };
+  const K_RIM = { CROCHET: 1.03, STRAIGHT_SIDE: 0.955, TUBES: 1.05, TUBULAR: 1.1, "303_XPLR": 0.9675 };
+  const RIM_IT = { CROCHET: "uncinato", STRAIGHT_SIDE: "hookless", TUBES: "camera d'aria", TUBULAR: "tubolare", "303_XPLR": "Zipp 303 XPLR" };
+  const K_POS = { F: 0.94, R: 1.0 };
+  const ETRTO_REF = [[18,22,15],[22,25,17],[25,29,19],[29,35,21],[35,47,23],[47,58,25],[58,66,30],[66,72,35],[72,84,45],[84,96,55],[96,113,76],[114,133,94]];
+  const PSI = 14.5038;
+  const HOOKLESS_CAP = 5.0; // bar, ETRTO per hookless
+
+  const $ = (id) => document.getElementById(id);
+  const num = (id) => { const v = parseFloat(String($(id).value).replace(",", ".")); return isFinite(v) ? v : 0; };
+  const radio = (name) => { const r = document.querySelector('input[name="' + name + '"]:checked'); return r ? r : null; };
+  const fmt = (v, d) => v.toLocaleString("it-IT", { minimumFractionDigits: d, maximumFractionDigits: d });
+
+  const sel = { F: TIRES.find(t => t.model === "Cinturato Gravel M"), R: null };
+
+  function refWidth(w) { for (const [a, b, c] of ETRTO_REF) if (w >= a && w < b) return c; return 0; }
+
+  function calcWheel(pos, o) {
+    const W = o.tw, ref = refWidth(Math.round(W));
+    const L = W + 0.4 * (o.rim - ref);
+    const C = 4 * Math.PI ** 2 * (o.D / 2 + L / 2) * (L / 2);
+    const kW = 1 + (2.2 * o.M - 180) * 0.0025;
+    const base = Math.pow(10, 8.684670773) * Math.pow(C, -1.304556655);
+    const k = { pos: K_POS[pos], rim: K_RIM[o.rimType], surf: o.surf, wet: o.wet, cas: K_CASING[o.casing], pri: o.pri };
+    const psi = base * kW * k.pos * k.rim * k.surf * k.wet * k.cas * k.pri;
+    const bar = psi * 68.9476 / 1000;
+    return { L, ref, C, kW, base, k, bar };
+  }
+
+  // Pressione da impostare a T_in per ottenere P a T_out (manometrica, bar)
+  function tempCorr(p, tIn, tOut) {
+    const atm = 1.01325;
+    return (p + atm) * (tIn + 273.15) / (tOut + 273.15) - atm;
+  }
+
+  function gauge(el, name, bar, max) {
+    const scale = Math.max(4, Math.ceil(Math.max(max || 0, bar) + 0.5));
+    const ang = (v) => -120 + 240 * Math.min(v, scale) / scale;
+    const pt = (a, r) => { const t = (a - 90) * Math.PI / 180; return [100 + r * Math.cos(t), 100 + r * Math.sin(t)]; };
+    let ticks = "";
+    for (let v = 0; v <= scale + 1e-9; v += 0.5) {
+      const major = Math.abs(v - Math.round(v)) < 1e-9;
+      const [x1, y1] = pt(ang(v), major ? 70 : 76), [x2, y2] = pt(ang(v), 84);
+      ticks += '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="var(--muted)" stroke-width="' + (major ? 2 : 1) + '"/>';
+      if (major) { const [tx, ty] = pt(ang(v), 58); ticks += '<text x="' + tx.toFixed(1) + '" y="' + (ty + 4).toFixed(1) + '" text-anchor="middle" font-size="11" font-family="IBM Plex Mono, monospace" fill="var(--muted)">' + v + '</text>'; }
+    }
+    let redArc = "";
+    if (max && max < scale) {
+      const [ax, ay] = pt(ang(max), 88), [bx, by] = pt(ang(scale), 88);
+      const large = (ang(scale) - ang(max)) > 180 ? 1 : 0;
+      redArc = '<path d="M' + ax.toFixed(1) + ' ' + ay.toFixed(1) + ' A88 88 0 ' + large + ' 1 ' + bx.toFixed(1) + ' ' + by.toFixed(1) + '" fill="none" stroke="var(--bad)" stroke-width="5"/>';
+    }
+    const [n1, n2] = pt(-120, 88), [n3, n4] = pt(120, 88);
+    el.innerHTML =
+      '<svg viewBox="0 0 200 165" role="img" aria-label="' + name + ' ' + fmt(bar, 2) + ' bar">' +
+      '<path d="M' + n1.toFixed(1) + ' ' + n2.toFixed(1) + ' A88 88 0 1 1 ' + n3.toFixed(1) + ' ' + n4.toFixed(1) + '" fill="none" stroke="var(--line)" stroke-width="5"/>' +
+      redArc + ticks +
+      '<g class="needle" style="transform-origin:100px 100px;transform:rotate(' + ang(bar).toFixed(1) + 'deg)"><line x1="100" y1="108" x2="100" y2="26" stroke="var(--brass)" stroke-width="3" stroke-linecap="round"/></g>' +
+      '<circle cx="100" cy="100" r="6" fill="var(--ink)"/>' +
+      '<text x="100" y="150" text-anchor="middle" font-size="11" font-family="IBM Plex Mono, monospace" fill="var(--muted)">bar</text></svg>' +
+      '<div class="g-name">' + name + '</div>' +
+      '<div class="g-val">' + fmt(bar, 2) + '<small>bar</small></div>' +
+      '<div class="g-psi">' + fmt(bar * PSI, 1) + ' psi</div>';
+  }
+
+  function tireNote(pos) {
+    const t = sel[pos], el = $("tn" + pos);
+    el.textContent = t ? "Selezionato: " + t.name + " — carcassa " + CASING_IT[t.casing] + " (modificabile)." : "Nessun modello selezionato: scegli la carcassa a mano.";
+  }
+
+  function compute() {
+    const M = num("wRider") + num("wBike") + num("wLoad");
+    $("wTot").textContent = fmt(M, 1) + " kg";
+    const same = $("same").checked;
+    $("searchR").hidden = same;
+    if (same) { sel.R = sel.F; $("tcR").value = $("tcF").value; }
+    const common = {
+      M, D: num("diam"), rim: num("rimW"), rimType: $("rimType").value,
+      surf: parseFloat(radio("surf").value), wet: parseFloat(radio("wet").value), pri: parseFloat(radio("pri").value)
+    };
+    const rimMax = num("rimMax");
+    const hookless = common.rimType === "STRAIGHT_SIDE" || common.rimType === "303_XPLR";
+    const cap = Math.min(rimMax > 0 ? rimMax : 99, hookless ? HOOKLESS_CAP : 99);
+    const res = {};
+    const notes = [];
+    for (const pos of ["F", "R"]) {
+      const r = calcWheel(pos, Object.assign({}, common, { tw: num("tw" + pos), casing: $("tc" + pos).value }));
+      r.raw = r.bar;
+      if (r.bar > cap) { r.bar = cap; r.capped = true; }
+      r.home = tempCorr(r.bar, num("tIn"), num("tOut"));
+      r.cl = num("cl" + pos);
+      res[pos] = r;
+    }
+    gauge($("gF"), "Anteriore", res.F.bar, cap < 99 ? cap : 0);
+    gauge($("gR"), "Posteriore", res.R.bar, cap < 99 ? cap : 0);
+
+    const tIn = num("tIn"), tOut = num("tOut");
+    let kv = '<span class="h">Valore</span><span class="h">Ant.</span><span class="h">Post.</span>';
+    kv += '<span>Da gonfiare a ' + fmt(tIn, 0) + ' °C</span><span class="em">' + fmt(res.F.home, 2) + '</span><span class="em">' + fmt(res.R.home, 2) + '</span>';
+    kv += '<span>Larghezza stimata montata</span><span>' + fmt(res.F.L, 1) + ' mm</span><span>' + fmt(res.R.L, 1) + ' mm</span>';
+    const marg = (r) => r.cl > 0 ? fmt(r.cl - r.L, 1) + ' mm' : '—';
+    kv += '<span>Margine sul passaggio ruota</span><span>' + marg(res.F) + '</span><span>' + marg(res.R) + '</span>';
+    $("kv").innerHTML = kv;
+    const mb = (lab, r) => '<div><span>' + lab + '</span><b>' + fmt(r.bar, 2) + '<small>bar</small></b><em>gonfia a ' + fmt(tIn, 0) + '°: ' + fmt(r.home, 2) + '</em></div>';
+    $("mbar").innerHTML = mb("Anteriore", res.F) + mb("Posteriore", res.R);
+
+    // Avvisi
+    if (res.F.capped || res.R.capped) notes.push(["bad", "Il calcolo supera la pressione massima del cerchio: il valore è stato limitato a " + fmt(cap, 2) + " bar. Con questa combinazione conviene un pneumatico più largo."]);
+    for (const pos of ["F", "R"]) {
+      const r = res[pos], nm = pos === "F" ? "anteriore" : "posteriore";
+      if (r.cl > 0) {
+        const m = r.cl - r.L;
+        if (m < 0) notes.push(["bad", "Pneumatico " + nm + ": la larghezza stimata (" + fmt(r.L, 1) + " mm) supera il passaggio ruota dichiarato (" + fmt(r.cl, 1) + " mm). Rischio di sfregamento: abbassare la pressione non basta, serve una sezione più stretta."]);
+        else if (m < 4) notes.push(["warn", "Pneumatico " + nm + ": restano circa " + fmt(m, 1) + " mm rispetto al passaggio dichiarato. Sullo sterrato sassi e fango possono incastrarsi. Misura la luce reale con il calibro."]);
+      }
+      const tw = num("tw" + pos);
+      if (common.rimType === "303_XPLR" && tw < 40) notes.push(["bad", "Zipp 303 XPLR: sezione minima 40 mm. Il " + nm + " da " + tw + " mm non è ammesso."]);
+      const t = sel[pos];
+      if (common.rimType === "303_XPLR" && t && !t.xplr) notes.push(["warn", t.name + " non risulta nella lista dei pneumatici approvati da Zipp per il 303 XPLR (lista nota a fine 2025). Verifica sul sito Zipp prima di usarlo."]);
+      if (tw <= 40 && r.bar < 1.6 && common.rimType !== "TUBES") notes.push(["warn", "Pneumatico " + nm + " sotto 1,6 bar con sezione ≤ 40 mm: aumenta il rischio di colpire il cerchio sui sassi. Valuta un inserto antiforatura."]);
+    }
+    if (Math.abs(tIn - tOut) >= 5) notes.push(["ok", "Correzione temperatura: da " + fmt(tIn, 0) + " °C a " + fmt(tOut, 0) + " °C la pressione cambia di circa " + fmt(Math.abs(res.F.home - res.F.bar), 2) + " bar all'anteriore. Gonfia ai valori della riga “Da gonfiare”."]);
+    notes.push(["ok", "Usa un manometro digitale: alle pressioni gravel l'errore delle pompe a pavimento (0,1–0,2 bar) pesa molto. Ritocca di ±0,1 bar in base alle sensazioni."]);
+    const seen = new Set();
+    $("notes").innerHTML = notes.filter(n => !seen.has(n[1]) && seen.add(n[1])).map(n => '<div class="note ' + n[0] + '">' + n[1] + '</div>').join("");
+
+    // Tabella dei fattori
+    const row = (lab, f, r, d) => '<tr><td>' + lab + '</td><td>' + f + '</td><td>' + r + '</td></tr>';
+    const k = (p, key) => fmt(res[p].k[key], 4);
+    let t = '<tr><th>Fattore</th><th>Ant.</th><th>Post.</th></tr>';
+    t += row("Sezione nominale [mm]", fmt(num("twF"), 0), fmt(num("twR"), 0));
+    t += row("Canale ETRTO di rif. [mm]", fmt(res.F.ref, 0), fmt(res.R.ref, 0));
+    t += row("Larghezza stimata L [mm]", fmt(res.F.L, 2), fmt(res.R.L, 2));
+    t += row("C [mm²]", fmt(res.F.C, 0), fmt(res.R.C, 0));
+    t += row("Base 10^8,68 × C^−1,30 [psi]", fmt(res.F.base, 2), fmt(res.R.base, 2));
+    t += row("K peso (M = " + fmt(M, 1) + " kg)", fmt(res.F.kW, 4), fmt(res.R.kW, 4));
+    t += row("K posizione", k("F", "pos"), k("R", "pos"));
+    t += row("K cerchio (" + RIM_IT[common.rimType] + ")", k("F", "rim"), k("R", "rim"));
+    t += row("K fondo", k("F", "surf"), k("R", "surf"));
+    t += row("K meteo", k("F", "wet"), k("R", "wet"));
+    t += row("K carcassa", k("F", "cas"), k("R", "cas"));
+    t += row("K priorità", k("F", "pri"), k("R", "pri"));
+    t += row("<strong>Pressione [bar]</strong>", "<strong>" + fmt(res.F.raw, 3) + "</strong>", "<strong>" + fmt(res.R.raw, 3) + "</strong>");
+    t += row("Limite cerchio applicato", res.F.capped ? "sì" : "no", res.R.capped ? "sì" : "no");
+    t += row("Da gonfiare a " + fmt(tIn, 0) + " °C [bar]", fmt(res.F.home, 3), fmt(res.R.home, 3));
+    $("tbl").innerHTML = t;
+
+    tireNote("F"); tireNote("R");
+    save();
+  }
+
+  // ---------- Ricerca pneumatici ----------
+  function setupSearch(pos) {
+    const input = $("ts" + pos), list = $("tl" + pos);
+    let items = [], active = -1;
+    if (sel[pos]) input.value = sel[pos].name;
+    function render() {
+      const q = input.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+      items = TIRES.filter(t => q.every(w => (t.name + " " + t.cat).toLowerCase().includes(w))).slice(0, 40);
+      active = items.length ? 0 : -1;
+      list.innerHTML = items.length
+        ? items.map((t, i) => '<li role="option" id="o' + pos + i + '" aria-selected="' + (i === active) + '" data-i="' + i + '"><span>' + t.name + '</span><small>' + (t.cat === "road" ? "strada" : "gravel") + " · " + CASING_IT[t.casing] + '</small></li>').join("")
+        : '<li aria-disabled="true"><span>Nessun modello trovato: imposta sezione e carcassa a mano</span></li>';
+      open(true);
+    }
+    function open(v) { list.hidden = !v; input.setAttribute("aria-expanded", String(v)); }
+    function choose(i) {
+      const t = items[i]; if (!t) return;
+      sel[pos] = t; input.value = t.name; $("tc" + pos).value = t.casing;
+      if (pos === "F" && $("same").checked) { $("tcR").value = t.casing; }
+      open(false); compute();
+    }
+    function highlight() {
+      [...list.children].forEach((li, i) => li.setAttribute("aria-selected", String(i === active)));
+      const a = list.children[active]; if (a) { a.scrollIntoView({ block: "nearest" }); input.setAttribute("aria-activedescendant", a.id || ""); }
+    }
+    input.addEventListener("input", render);
+    input.addEventListener("focus", () => { input.select(); render(); });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") { e.preventDefault(); if (list.hidden) render(); active = Math.min(active + 1, items.length - 1); highlight(); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); active = Math.max(active - 1, 0); highlight(); }
+      else if (e.key === "Enter") { e.preventDefault(); choose(active); }
+      else if (e.key === "Escape") { open(false); }
+    });
+    list.addEventListener("mousedown", (e) => { const li = e.target.closest("li[data-i]"); if (li) { e.preventDefault(); choose(+li.dataset.i); } });
+    input.addEventListener("blur", () => setTimeout(() => { open(false); if (sel[pos]) input.value = sel[pos].name; }, 120));
+  }
+
+  // ---------- Preset cerchio ----------
+  $("rimPreset").addEventListener("change", () => {
+    if ($("rimPreset").value === "xplr") {
+      $("rimW").value = 32; $("rimType").value = "303_XPLR"; $("rimMax").value = 3.45;
+      $("rimHint").textContent = "Pressione massima incisa sul cerchio. Per lo Zipp 303 XPLR è 3,45 bar (50 psi).";
+    } else {
+      if ($("rimType").value === "303_XPLR") $("rimType").value = "STRAIGHT_SIDE";
+      $("rimMax").value = 5.0;
+      $("rimHint").textContent = "Inserisci canale interno e pressione massima incisi sul tuo cerchio. Sui cerchi hookless il limite ETRTO è comunque 5 bar.";
+    }
+    compute();
+  });
+
+  // ---------- Salvataggio locale degli ultimi valori ----------
+  const KEYS = ["wRider","wBike","wLoad","rimPreset","diam","rimW","rimType","rimMax","twF","tcF","clF","twR","tcR","clR","tIn","tOut"];
+  function save() {
+    try {
+      const d = {}; KEYS.forEach(k => d[k] = $(k).value);
+      d.same = $("same").checked; d.surf = radio("surf").id; d.wet = radio("wet").id; d.pri = radio("pri").id;
+      d.selF = sel.F ? sel.F.name : null; d.selR = sel.R ? sel.R.name : null;
+      localStorage.setItem("pressione-gomme-v1", JSON.stringify(d));
+    } catch (e) { /* archivio non disponibile */ }
+  }
+  function load() {
+    try {
+      const d = JSON.parse(localStorage.getItem("pressione-gomme-v1") || "null"); if (!d) return;
+      KEYS.forEach(k => { if (d[k] != null) $(k).value = d[k]; });
+      $("same").checked = !!d.same;
+      ["surf","wet","pri"].forEach(n => { if (d[n] && $(d[n])) $(d[n]).checked = true; });
+      sel.F = TIRES.find(t => t.name === d.selF) || null;
+      sel.R = TIRES.find(t => t.name === d.selR) || null;
+    } catch (e) { /* ignora */ }
+  }
+
+  // ---------- Meteo in tempo reale (Open-Meteo, gratuito, senza chiave) ----------
+  const WX_KEY = "pressione-gomme-luogo";
+  function wxSay(t) { $("wxOut").textContent = t; }
+  function setRadio(name, val) { const r = document.querySelector('input[name="' + name + '"][value="' + val + '"]'); if (r) r.checked = true; }
+  function wxBusy(b) { $("wxSearch").disabled = b; $("wxGeo").disabled = b; }
+  async function wxLoad(lat, lon, label) {
+    if (!navigator.onLine) { wxSay("Sei offline: meteo non aggiornato. Imposta condizioni e temperatura a mano."); return; }
+    wxBusy(true); wxSay("Leggo il meteo per " + label + "…");
+    try {
+      const u = "https://api.open-meteo.com/v1/forecast?latitude=" + lat.toFixed(4) + "&longitude=" + lon.toFixed(4) +
+        "&current=temperature_2m,precipitation,weather_code&hourly=precipitation&past_days=1&forecast_days=1&timezone=auto";
+      const r = await fetch(u); if (!r.ok) throw new Error("HTTP " + r.status);
+      const d = await r.json();
+      const c = d.current || {}, h = d.hourly || {};
+      const now = Date.parse(c.time);
+      let rain12 = 0;
+      (h.time || []).forEach((t, i) => { const ts = Date.parse(t); if (ts <= now && ts > now - 12 * 3600e3) rain12 += +(h.precipitation[i] || 0); });
+      const code = +c.weather_code, pNow = +(c.precipitation || 0);
+      const drizzle = code >= 51 && code <= 57;
+      const rain = (code >= 61 && code <= 67) || (code >= 80 && code <= 82) || code >= 95;
+      const snow = (code >= 71 && code <= 77) || code === 85 || code === 86;
+      let cond, why;
+      if (rain || snow || pNow >= 0.5 || rain12 >= 5) { cond = "0.90"; why = snow ? "neve" : rain ? "pioggia in corso" : "molta pioggia nelle ultime 12 ore"; }
+      else if (drizzle || pNow > 0 || rain12 >= 0.5) { cond = "0.95"; why = drizzle ? "pioviggine" : "fondo ancora umido dopo la pioggia"; }
+      else { cond = "1.00"; why = "nessuna pioggia nelle ultime 12 ore"; }
+      setRadio("wet", cond);
+      const temp = Math.round(+c.temperature_2m);
+      if (isFinite(temp)) $("tOut").value = temp;
+      wxSay(label + ": " + fmt(+c.temperature_2m, 1) + " °C, " + why + " (" + fmt(rain12, 1) + " mm in 12 h). Fondo impostato su " +
+        { "1.00": "asciutto", "0.95": "umido", "0.90": "bagnato" }[cond] + ". Aggiornato alle " + new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) + ".");
+      try { localStorage.setItem(WX_KEY, JSON.stringify({ lat, lon, label })); } catch (e) {}
+      compute();
+    } catch (e) {
+      wxSay("Non riesco a leggere il meteo (" + e.message + "). Controlla la connessione e riprova, oppure imposta i valori a mano.");
+    } finally { wxBusy(false); }
+  }
+  async function wxCity() {
+    const q = $("wxCity").value.trim(); if (!q) { wxSay("Scrivi il nome di una località."); return; }
+    if (!navigator.onLine) { wxSay("Sei offline: non posso cercare la località."); return; }
+    wxBusy(true); wxSay("Cerco " + q + "…");
+    try {
+      const r = await fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&language=it&format=json&name=" + encodeURIComponent(q));
+      const d = await r.json(); const g = d.results && d.results[0];
+      wxBusy(false);
+      if (!g) { wxSay("Nessuna località trovata per “" + q + "”. Prova con il nome del comune."); return; }
+      $("wxCity").value = g.name;
+      await wxLoad(g.latitude, g.longitude, g.name + (g.admin1 ? " (" + g.admin1 + ")" : ""));
+    } catch (e) { wxBusy(false); wxSay("Ricerca non riuscita (" + e.message + "). Riprova più tardi."); }
+  }
+  $("wxSearch").addEventListener("click", wxCity);
+  $("wxCity").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); wxCity(); } });
+  $("wxGeo").addEventListener("click", () => {
+    if (!("geolocation" in navigator)) { wxSay("Questo dispositivo non fornisce la posizione: cerca la località per nome."); return; }
+    wxSay("Chiedo la posizione…");
+    navigator.geolocation.getCurrentPosition(
+      (p) => wxLoad(p.coords.latitude, p.coords.longitude, "posizione attuale"),
+      () => wxSay("Posizione non disponibile o negata. Puoi abilitarla in Impostazioni › Privacy › Localizzazione, oppure cercare la località per nome."),
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 15 * 60e3 });
+  });
+  function wxAuto() {
+    try { const l = JSON.parse(localStorage.getItem(WX_KEY) || "null"); if (l) { if (l.label && l.label !== "posizione attuale") $("wxCity").value = l.label.replace(/ \(.*\)$/, ""); wxLoad(l.lat, l.lon, l.label); } } catch (e) {}
+  }
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") wxAuto(); });
+
+  // ---------- Funzionamento offline ----------
+  if ("serviceWorker" in navigator) { window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {})); }
+
+  load();
+  setupSearch("F"); setupSearch("R");
+  $("form").addEventListener("input", (e) => { if (!e.target.matches('[role="combobox"]')) compute(); });
+  $("form").addEventListener("change", (e) => { if (!e.target.matches('[role="combobox"]')) compute(); });
+  $("form").addEventListener("submit", (e) => e.preventDefault());
+  $("mbar").addEventListener("click", () => { const r = document.querySelector(".results"); if (r) r.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); });
+  // Invio dalla tastiera iOS: chiude la tastiera invece di inviare il modulo
+  $("form").addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.matches('input[inputmode]')) { e.preventDefault(); e.target.blur(); } });
+  $("same").addEventListener("change", () => { if (!$("same").checked) { sel.R = sel.R || sel.F; $("tsR").value = sel.R ? sel.R.name : ""; } compute(); });
+  compute();
+  wxAuto();
+})();
+</script>
+</body>
+</html>
