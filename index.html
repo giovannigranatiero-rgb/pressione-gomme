@@ -825,8 +825,9 @@ M = peso totale [kg]   D = diametro ISO [mm]</div>
   async function fetchKomoot(ref) {
     let u = "https://api.komoot.de/v007/tours/" + ref.id + "?_embedded=coordinates,way_types,surfaces&directions=v2&format=coordinate_array";
     if (ref.tok) u += "&share_token=" + encodeURIComponent(ref.tok);
-    let r = await fetch(u);
-    if ((r.status === 401 || r.status === 403) && KA) r = await fetch(u, { headers: kHead() });
+    // con l'account collegato si chiede subito con l'accesso: Safari riusa le risposte negate per lo stesso indirizzo
+    let r = await fetch(u + "&_=" + Date.now(), KA ? { headers: kHead(), cache: "no-store" } : { cache: "no-store" });
+    if ((r.status === 401 || r.status === 403) && KA && ref.tok) r = await fetch(u + "&_=" + (Date.now() + 1), { cache: "no-store" });
     if (r.status === 401 || r.status === 403) throw new Error("PRIVATO");
     if (r.status === 404) throw new Error("NONTROVATO");
     if (!r.ok) throw new Error("HTTP " + r.status);
@@ -1128,7 +1129,7 @@ M = peso totale [kg]   D = diametro ISO [mm]</div>
     if (!navigator.onLine) { kaSay("Sei offline: elenco dei percorsi non aggiornato."); return; }
     kaSay("Leggo i tuoi percorsi…");
     try {
-      const r = await fetch("https://api.komoot.de/v007/users/" + KA.uid + "/tours/?type=" + $("kaType").value + "&sort_field=date&sort_direction=desc&page=0&limit=50", { headers: kHead() });
+      const r = await fetch("https://api.komoot.de/v007/users/" + KA.uid + "/tours/?type=" + $("kaType").value + "&sort_field=date&sort_direction=desc&page=0&limit=50&_=" + Date.now(), { headers: kHead(), cache: "no-store" });
       if (r.status === 401 || r.status === 403) { kaOut(); kaSay("L'accesso a Komoot è scaduto: collega di nuovo l'account."); return; }
       if (!r.ok) throw new Error("HTTP " + r.status);
       const j = await r.json(), list = (j._embedded && j._embedded.tours) || [];
