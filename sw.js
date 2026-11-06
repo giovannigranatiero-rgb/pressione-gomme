@@ -1,5 +1,5 @@
 // Funzionamento offline: l'app resta usabile senza rete; il meteo richiede sempre la connessione.
-const CACHE = "pressione-gomme-v1";
+const CACHE = "pressione-gomme-v3";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => {
@@ -10,7 +10,7 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET" || url.hostname.endsWith("open-meteo.com")) return; // meteo: sempre dalla rete
   if (url.origin === location.origin) {
     // pagina e icone: rete se disponibile (così ricevi gli aggiornamenti), altrimenti copia locale
-    e.respondWith(fetch(e.request).then((r) => { const c = r.clone(); caches.open(CACHE).then((k) => k.put(e.request, c)); return r; }).catch(() => caches.match(e.request).then((m) => m || caches.match("./index.html"))));
+    e.respondWith(fetch(e.request, { cache: "no-store" }).then((r) => { const c = r.clone(); caches.open(CACHE).then((k) => k.put(e.request, c)); return r; }).catch(() => caches.match(e.request).then((m) => m || caches.match("./index.html"))));
   } else {
     // caratteri Google Fonts: copia locale se presente
     e.respondWith(caches.match(e.request).then((m) => m || fetch(e.request).then((r) => { const c = r.clone(); caches.open(CACHE).then((k) => k.put(e.request, c)); return r; })));

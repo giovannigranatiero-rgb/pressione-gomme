@@ -160,6 +160,34 @@ html, body { overflow-x: clip; }
 @media (max-width: 880px) {
   .results { position: static; top: auto; }
 }
+
+/* Percorso */
+:root { --c-smooth: #5b6b7d; --c-rough: #8a7aa8; --c-compact: #c9a15a; --c-loose: #9b5a32; --c-unk: #cfd4da; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-smooth: #8597ab; --c-rough: #a998c9; --c-compact: #d9b46e; --c-loose: #c47c4f; --c-unk: #3a414a; } }
+:root[data-theme="dark"] { --c-smooth: #8597ab; --c-rough: #a998c9; --c-compact: #d9b46e; --c-loose: #c47c4f; --c-unk: #3a414a; }
+input[type=datetime-local] { width: 100%; font: inherit; font-family: var(--f-mono); font-size: 16px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; min-height: 44px; -webkit-appearance: none; appearance: none; }
+input[type=file].vh { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+.btn.ghost { background: transparent; border-color: var(--line); }
+.rt-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.rt-box { display: grid; gap: 10px; border-top: 1px dashed var(--line); padding-top: 12px; min-width: 0; }
+.rt-name { font-weight: 600; font-size: .98rem; overflow-wrap: anywhere; }
+.rt-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .82rem; color: var(--muted); font-family: var(--f-mono); }
+.sbar { display: flex; height: 14px; border-radius: 3px; overflow: hidden; background: var(--c-unk); }
+.sbar span { display: block; height: 100%; }
+.slegend { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 10px; font-size: .84rem; align-items: center; }
+.slegend span:last-child, .slegend span:nth-child(3n) { font-family: var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; }
+.sw { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+.wxtab { max-height: 260px; overflow: auto; border: 1px solid var(--line); border-radius: 4px; }
+.wxtab table { font-size: .8rem; }
+.wxtab th { position: sticky; top: 0; background: var(--panel); }
+.pill { font-family: var(--f-body); font-size: .72rem; padding: 1px 7px; border-radius: 3px; white-space: nowrap; }
+.pill.dry { background: var(--ok-soft); } .pill.damp { background: var(--warn-soft); } .pill.wet { background: var(--bad-soft); } .pill.nd { background: var(--bg); }
+.ka { background: var(--bg); border-radius: 4px; padding: 0 12px; }
+.ka summary { font-size: .95rem; }
+.ka[open] summary { margin-bottom: 10px; }
+.ka-body { display: grid; gap: 10px; padding-bottom: 12px; }
+.ka-body > div { display: grid; gap: 10px; }
+input[type=email], input[type=password] { width: 100%; font: inherit; font-family: var(--f-body); font-size: 16px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; min-height: 44px; -webkit-appearance: none; appearance: none; }
 </style>
 </head>
 <body>
@@ -248,6 +276,58 @@ html, body { overflow-x: clip; }
       </fieldset>
 
       <fieldset>
+        <legend>Percorso</legend>
+        <div class="field"><label for="rtUrl">Link del percorso Komoot</label><input type="text" id="rtUrl" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="https://www.komoot.com/it-it/tour/123456789"></div>
+        <div class="rt-actions">
+          <button type="button" class="btn" id="rtLoad">Carica da Komoot</button>
+          <button type="button" class="btn ghost" id="rtGpxBtn">Carica file GPX</button>
+          <input type="file" id="rtGpx" class="vh" accept=".gpx,application/gpx+xml,application/xml,text/xml" tabindex="-1" aria-hidden="true">
+        </div>
+        <details class="ka" id="kaBox">
+          <summary>Il mio account Komoot</summary>
+          <div class="ka-body">
+            <div id="kaLogin">
+              <div class="row">
+                <div class="field"><label for="kaEmail">Email Komoot</label><input type="email" id="kaEmail" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="email"></div>
+                <div class="field"><label for="kaPw">Password Komoot</label><input type="password" id="kaPw" autocomplete="current-password" enterkeyhint="go"></div>
+              </div>
+              <div class="rt-actions"><button type="button" class="btn" id="kaGo">Collega account</button></div>
+              <p class="hint">La password va direttamente a Komoot e non viene salvata: sul telefono resta solo il codice di accesso che Komoot restituisce, finché non scolleghi l'account.</p>
+            </div>
+            <div id="kaIn" hidden>
+              <p class="rt-name" id="kaWho"></p>
+              <div class="field"><label for="kaType">Mostra</label><select id="kaType"><option value="tour_planned">Percorsi pianificati</option><option value="tour_recorded">Uscite registrate</option></select></div>
+              <div class="field"><label for="kaTours">I miei percorsi</label><select id="kaTours"></select></div>
+              <div class="rt-actions">
+                <button type="button" class="btn" id="kaLoadBtn">Carica</button>
+                <button type="button" class="btn ghost" id="kaRefresh">Aggiorna elenco</button>
+                <button type="button" class="btn ghost" id="kaLogout">Scollega account</button>
+              </div>
+            </div>
+            <p class="wxout" id="kaOut" aria-live="polite"></p>
+          </div>
+        </details>
+        <div class="row">
+          <div class="field"><label for="rtStart">Partenza</label><input type="datetime-local" id="rtStart"></div>
+          <div class="field"><label for="rtSpeed">Velocità media</label><div class="unit"><input type="text" inputmode="decimal" id="rtSpeed" value="20"><span>km/h</span></div></div>
+        </div>
+        <p class="wxout" id="rtOut" aria-live="polite"></p>
+        <div class="rt-box" id="rtRes" hidden>
+          <div class="rt-name" id="rtName"></div>
+          <div class="rt-meta" id="rtMeta"></div>
+          <div class="sbar" id="rtBar" role="img" aria-label="Ripartizione del fondo stradale"></div>
+          <div class="slegend" id="rtLeg"></div>
+          <div class="kv" id="rtPress"></div>
+          <div class="wxtab" id="rtWxTab" hidden></div>
+          <div class="rt-actions">
+            <button type="button" class="btn ghost" id="rtWx">Aggiorna meteo</button>
+            <button type="button" class="btn ghost" id="rtClear">Rimuovi percorso</button>
+          </div>
+        </div>
+        <p class="hint">Komoot: incolla il link di un percorso pubblico o un link di invito copiato da Condividi, oppure collega il tuo account per scegliere tra i tuoi percorsi, anche privati. Per un percorso privato puoi anche scaricare il GPX (komoot.com › percorso › Scarica › GPX) e caricarlo qui. Il fondo arriva da Komoot o, per i GPX, da OpenStreetMap; il meteo dalle previsioni nei punti e alle ore in cui passerai. La pressione è una sola per tutto il giro: è la media pesata sui chilometri.</p>
+      </fieldset>
+
+      <fieldset>
         <legend>Fondo stradale</legend>
         <div class="seg" role="radiogroup" aria-label="Fondo stradale">
           <input type="radio" name="surf" id="s1" value="1.03"><label for="s1">Asfalto liscio</label>
@@ -256,6 +336,7 @@ html, body { overflow-x: clip; }
           <input type="radio" name="surf" id="s4" value="0.94"><label for="s4">Misto asfalto/sterrato</label>
           <input type="radio" name="surf" id="s5" value="0.90" checked><label for="s5">Gravel veloce compatto</label>
           <input type="radio" name="surf" id="s6" value="0.85"><label for="s6">Gravel smosso / tecnico</label>
+          <input type="radio" name="surf" id="s7" value="0.90" hidden><label for="s7" id="s7l" hidden>Dal percorso</label>
         </div>
       </fieldset>
 
@@ -308,7 +389,7 @@ C = 4π² × (D/2 + L/2) × (L/2)   L = larghezza stimata [mm]
 L = sezione + 0,4 × (canale − canale ETRTO di riferimento)
 M = peso totale [kg]   D = diametro ISO [mm]</div>
         <div class="tbl-wrap"><table id="tbl"></table></div>
-        <p class="src">Base del modello: formula del calcolatore pressioni SRAM AXS, ricostruita dal codice della web app e pubblicata con licenza MIT nel progetto <a href="https://github.com/StefanOOE/mcp-tirepressure" target="_blank" rel="noopener">mcp-tirepressure</a>. Coefficienti SRAM: posizione (0,94 / 1), cerchio, carcassa, asfalto 1,00, gravel 0,90, bagnato 0,90. Aggiunte di questo calcolatore, da tarare con l'esperienza: gradi intermedi del fondo, umido e fango, priorità, correzione per la temperatura (legge dei gas) e controllo del passaggio ruota. Non è un prodotto SRAM. Rispetta sempre la pressione massima di cerchio e pneumatico.</p>
+        <p class="src">Base del modello: formula del calcolatore pressioni SRAM AXS, ricostruita dal codice della web app e pubblicata con licenza MIT nel progetto <a href="https://github.com/StefanOOE/mcp-tirepressure" target="_blank" rel="noopener">mcp-tirepressure</a>. Coefficienti SRAM: posizione (0,94 / 1), cerchio, carcassa, asfalto 1,00, gravel 0,90, bagnato 0,90. Aggiunte di questo calcolatore, da tarare con l'esperienza: gradi intermedi del fondo, umido e fango, priorità, correzione per la temperatura (legge dei gas) e controllo del passaggio ruota. Percorsi: dati di fondo da Komoot (interfaccia non ufficiale) o da OpenStreetMap (© contributori OpenStreetMap, licenza ODbL); previsioni meteo da Open-Meteo. Non è un prodotto SRAM. Rispetta sempre la pressione massima di cerchio e pneumatico.</p>
       </details>
     </aside>
   </div>
@@ -530,6 +611,7 @@ M = peso totale [kg]   D = diametro ISO [mm]</div>
     t += row("Da gonfiare a " + fmt(tIn, 0) + " °C [bar]", fmt(res.F.home, 3), fmt(res.R.home, 3));
     $("tbl").innerHTML = t;
 
+    routeExtras(common, cap);
     tireNote("F"); tireNote("R");
     save();
   }
@@ -599,7 +681,7 @@ M = peso totale [kg]   D = diametro ISO [mm]</div>
       const d = JSON.parse(localStorage.getItem("pressione-gomme-v1") || "null"); if (!d) return;
       KEYS.forEach(k => { if (d[k] != null) $(k).value = d[k]; });
       $("same").checked = !!d.same;
-      ["surf","wet","pri"].forEach(n => { if (d[n] && $(d[n])) $(d[n]).checked = true; });
+      ["surf","wet","pri"].forEach(n => { if (d[n] && d[n] !== "s7" && $(d[n])) $(d[n]).checked = true; });
       sel.F = TIRES.find(t => t.name === d.selF) || null;
       sel.R = TIRES.find(t => t.name === d.selR) || null;
     } catch (e) { /* ignora */ }
@@ -665,14 +747,427 @@ M = peso totale [kg]   D = diametro ISO [mm]</div>
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 15 * 60e3 });
   });
   function wxAuto() {
+    if (RT) return;
     try { const l = JSON.parse(localStorage.getItem(WX_KEY) || "null"); if (l) { if (l.label && l.label !== "posizione attuale") $("wxCity").value = l.label.replace(/ \(.*\)$/, ""); wxLoad(l.lat, l.lon, l.label); } } catch (e) {}
   }
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") wxAuto(); });
+
+  // ---------- Percorso: Komoot o GPX → fondo stradale e meteo lungo il tracciato ----------
+  const RT_KEY = "pressione-gomme-percorso";
+  let RT = null;      // percorso caricato
+  let rtPrevSurf = null;
+  const CLS = [
+    ["smooth", "Asfalto", 1.00],
+    ["rough", "Asfalto rovinato, pavé", 0.96],
+    ["compact", "Sterrato compatto", 0.90],
+    ["loose", "Sterrato smosso, sentiero", 0.85],
+    ["unk", "Fondo non noto", null]
+  ];
+  const ST_IT = { dry: "asciutto", damp: "umido", wet: "bagnato", nd: "n.d." };
+
+  function rtSay(t) { $("rtOut").textContent = t; }
+  function rtBusy(b) { ["rtLoad", "rtGpxBtn", "rtWx", "rtClear"].forEach((id) => { const el = $(id); if (el) el.disabled = b; }); }
+  function localISO(ms) { const d = new Date(ms), p = (n) => String(n).padStart(2, "0"); return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "T" + p(d.getHours()) + ":" + p(d.getMinutes()); }
+  function nextHour() { const d = new Date(); d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1); return d.getTime(); }
+
+  // --- geometria ---
+  function gdist(a, b) {
+    const r = Math.PI / 180, la = (b.lat - a.lat) * r, lo = (b.lon - a.lon) * r;
+    const h = Math.sin(la / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(lo / 2) ** 2;
+    return 12742017.6 * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+  function cumul(pts) { const c = [0]; for (let i = 1; i < pts.length; i++) c.push(c[i - 1] + gdist(pts[i - 1], pts[i])); return c; }
+  function climb(pts) {
+    let up = 0, ref = null;
+    for (const p of pts) { if (!isFinite(p.ele)) continue; if (ref == null) { ref = p.ele; continue; } if (p.ele - ref > 3) { up += p.ele - ref; ref = p.ele; } else if (ref - p.ele > 3) ref = p.ele; }
+    return up;
+  }
+  function proj(lat0) { const kx = 111320 * Math.cos(lat0 * Math.PI / 180), ky = 110540; return (p) => [p.lon * kx, p.lat * ky]; }
+  function segDist(p, a, b) {
+    const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy;
+    let t = L ? ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L : 0; t = Math.max(0, Math.min(1, t));
+    const x = a[0] + t * dx - p[0], y = a[1] + t * dy - p[1]; return Math.sqrt(x * x + y * y);
+  }
+
+  // --- classificazione del fondo ---
+  function clsSurface(el) {
+    const k = String(el || "").split("#").pop().toLowerCase();
+    if (!k || k === "unknown") return "unk";
+    if (/unpaved|compacted|fine_gravel|gravel/.test(k)) return "compact";
+    if (/cobble|sett|paving_stones/.test(k)) return "rough";
+    if (/asphalt|paved|concrete|tarmac|chipseal/.test(k)) return "smooth";
+    if (/ground|dirt|earth|nature|grass|sand|rock|alpine|mud|pebble|trail|woodchips/.test(k)) return "loose";
+    return "unk";
+  }
+  function clsWayType(el) {
+    const k = String(el || "").split("#").pop().toLowerCase();
+    if (/trail|path|alpine|hiking|mtb/.test(k)) return "loose";
+    if (/^way$|hard_path|track/.test(k)) return "compact";
+    if (/street|road|primary|secondary|tertiary|cycleway|minor|service|state|bridge/.test(k)) return "smooth";
+    return "unk";
+  }
+  function clsOSM(t) {
+    const c = clsSurface(t.surface || ""); if (c !== "unk") return c;
+    const h = t.highway || "";
+    if (h === "track") { const g = t.tracktype || ""; return g === "grade1" ? "smooth" : (g === "grade4" || g === "grade5") ? "loose" : "compact"; }
+    if (h === "path" || h === "bridleway") return "loose";
+    return h ? "smooth" : "unk";
+  }
+  const emptyBy = () => ({ smooth: 0, rough: 0, compact: 0, loose: 0, unk: 0 });
+
+  // --- Komoot ---
+  function parseKomoot(s) {
+    s = String(s || "").trim();
+    const m = s.match(/\/tour\/(\d+)/) || s.match(/^(\d{5,})$/); if (!m) return null;
+    const tok = (s.match(/[?&]share_token=([^&#\s]+)/) || [])[1];
+    return { id: m[1], tok };
+  }
+  async function fetchKomoot(ref) {
+    let u = "https://api.komoot.de/v007/tours/" + ref.id + "?_embedded=coordinates,way_types,surfaces&directions=v2&format=coordinate_array";
+    if (ref.tok) u += "&share_token=" + encodeURIComponent(ref.tok);
+    let r = await fetch(u);
+    if ((r.status === 401 || r.status === 403) && KA) r = await fetch(u, { headers: kHead() });
+    if (r.status === 401 || r.status === 403) throw new Error("PRIVATO");
+    if (r.status === 404) throw new Error("NONTROVATO");
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const j = await r.json(), e = j._embedded || {};
+    const pts = ((e.coordinates || {}).items || []).map((c) => ({ lat: c.lat, lon: c.lng, ele: c.alt }));
+    if (pts.length < 2) throw new Error("VUOTO");
+    const cum = cumul(pts), last = pts.length - 1;
+    const seg = (items, fn) => (items || []).map((s) => ({ a: s.from, b: Math.min(s.to, last), c: fn(s.element) }));
+    const sf = seg((e.surfaces || {}).items, clsSurface), wt = seg((e.way_types || {}).items, clsWayType);
+    const at = (list, i) => { for (const s of list) if (i >= s.a && i < s.b) return s.c; return "unk"; };
+    const by = emptyBy();
+    for (let i = 0; i < last; i++) { let c = at(sf, i); if (c === "unk") c = at(wt, i); by[c] += cum[i + 1] - cum[i]; }
+    return { name: j.name, pts, cum, by, dur: j.duration, up: j.elevation_up };
+  }
+
+  // --- GPX ---
+  function parseGPX(txt) {
+    const x = new DOMParser().parseFromString(txt, "application/xml");
+    if (x.getElementsByTagName("parsererror").length) throw new Error("GPX");
+    let nodes = x.getElementsByTagName("trkpt"); if (!nodes.length) nodes = x.getElementsByTagName("rtept");
+    const pts = [];
+    for (const n of nodes) {
+      const lat = parseFloat(n.getAttribute("lat")), lon = parseFloat(n.getAttribute("lon"));
+      if (!isFinite(lat) || !isFinite(lon)) continue;
+      const e = n.getElementsByTagName("ele")[0];
+      const p = { lat, lon, ele: e ? parseFloat(e.textContent) : NaN };
+      const q = pts[pts.length - 1]; if (q && gdist(q, p) < 3) continue; // punti doppi
+      pts.push(p);
+    }
+    if (pts.length < 2) throw new Error("GPX");
+    const nm = x.querySelector("trk > name, rte > name, metadata > name");
+    return { name: nm && nm.textContent.trim() ? nm.textContent.trim() : "Percorso GPX", pts };
+  }
+
+  // --- fondo da OpenStreetMap (per i GPX o i percorsi senza dati di fondo) ---
+  const OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter"];
+  async function overpass(q) {
+    let err = null;
+    for (const ep of OVERPASS) {
+      const ac = new AbortController(), to = setTimeout(() => ac.abort(), 30000);
+      try {
+        const r = await fetch(ep, { method: "POST", body: "data=" + encodeURIComponent(q), headers: { "Content-Type": "application/x-www-form-urlencoded" }, signal: ac.signal });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return await r.json();
+      } catch (e) { err = e; } finally { clearTimeout(to); }
+    }
+    throw err || new Error("OSM");
+  }
+  async function osmClasses(pts, cum, progress) {
+    // riquadri di ~1 km lungo la traccia, interrogati a gruppi di ~15 km
+    const boxes = []; let cur = null, acc = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i];
+      if (!cur) cur = { s: p.lat, n: p.lat, w: p.lon, e: p.lon };
+      cur.s = Math.min(cur.s, p.lat); cur.n = Math.max(cur.n, p.lat); cur.w = Math.min(cur.w, p.lon); cur.e = Math.max(cur.e, p.lon);
+      if (i) acc += cum[i] - cum[i - 1];
+      if (acc >= 1000 || i === pts.length - 1) { boxes.push(cur); cur = { s: p.lat, n: p.lat, w: p.lon, e: p.lon }; acc = 0; }
+    }
+    const ways = new Map(), groups = [];
+    for (let i = 0; i < boxes.length; i += 15) groups.push(boxes.slice(i, i + 15));
+    let ok = 0, t0 = Date.now();
+    for (let g = 0; g < groups.length; g++) {
+      if (Date.now() - t0 > 90000) break;
+      if (progress) progress(g, groups.length);
+      const q = "[out:json][timeout:25];(" + groups[g].map((b) => "way[highway](" + (b.s - 0.0003).toFixed(5) + "," + (b.w - 0.0004).toFixed(5) + "," + (b.n + 0.0003).toFixed(5) + "," + (b.e + 0.0004).toFixed(5) + ");").join("") + ");out tags geom;";
+      try { const d = await overpass(q); (d.elements || []).forEach((w) => ways.set(w.id, w)); ok++; } catch (e) { /* tratto senza dati */ }
+    }
+    if (!ok) throw new Error("OSM");
+    const P = proj(pts[0].lat), CELL = 60, grid = new Map(), segs = [];
+    const add = (k, s) => { const L = grid.get(k); if (L) L.push(s); else grid.set(k, [s]); };
+    for (const w of ways.values()) {
+      if (!w.geometry) continue;
+      const c = clsOSM(w.tags || {}), g = w.geometry.map((n) => P({ lat: n.lat, lon: n.lon }));
+      for (let i = 1; i < g.length; i++) {
+        const s = segs.length; segs.push([g[i - 1], g[i], c]);
+        const x0 = Math.floor(Math.min(g[i - 1][0], g[i][0]) / CELL), x1 = Math.floor(Math.max(g[i - 1][0], g[i][0]) / CELL);
+        const y0 = Math.floor(Math.min(g[i - 1][1], g[i][1]) / CELL), y1 = Math.floor(Math.max(g[i - 1][1], g[i][1]) / CELL);
+        for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) add(x + ":" + y, s);
+      }
+    }
+    const by = emptyBy(), STEP = 50, total = cum[cum.length - 1];
+    let j = 0;
+    for (let d = STEP / 2; d < total; d += STEP) {
+      while (j < cum.length - 2 && cum[j + 1] < d) j++;
+      const f = Math.max(0, Math.min(1, (d - cum[j]) / ((cum[j + 1] - cum[j]) || 1)));
+      const p = P({ lat: pts[j].lat + (pts[j + 1].lat - pts[j].lat) * f, lon: pts[j].lon + (pts[j + 1].lon - pts[j].lon) * f });
+      const cx = Math.floor(p[0] / CELL), cy = Math.floor(p[1] / CELL);
+      let best = 25, bc = "unk";
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+        const L = grid.get((cx + dx) + ":" + (cy + dy)); if (!L) continue;
+        for (const s of L) { const dd = segDist(p, segs[s][0], segs[s][1]); if (dd < best) { best = dd; bc = segs[s][2]; } }
+      }
+      by[bc] += Math.min(STEP, total - d + STEP / 2);
+    }
+    return by;
+  }
+
+  // --- punti per il meteo lungo il percorso ---
+  function wxPoints(pts, cum) {
+    const total = cum[cum.length - 1], n = Math.max(2, Math.min(25, Math.ceil(total / 5000) + 1)), out = [];
+    let j = 0;
+    for (let k = 0; k < n; k++) {
+      const d = total * k / (n - 1);
+      while (j < cum.length - 2 && cum[j + 1] < d) j++;
+      const p = pts[Math.abs(cum[j + 1] - d) < Math.abs(cum[j] - d) ? j + 1 : j];
+      out.push({ lat: +p.lat.toFixed(4), lon: +p.lon.toFixed(4), d: Math.round(d) });
+    }
+    return out;
+  }
+  function wxState(code, pNow, r12) {
+    const drizzle = code >= 51 && code <= 57;
+    const rain = (code >= 61 && code <= 67) || (code >= 80 && code <= 82) || code >= 95;
+    const snow = (code >= 71 && code <= 77) || code === 85 || code === 86;
+    if (rain || snow || pNow >= 0.5 || r12 >= 5) return "wet";
+    if (drizzle || pNow > 0 || r12 >= 0.5) return "damp";
+    return "dry";
+  }
+  function weights(rows) {
+    return rows.map((r, i) => {
+      const a = i > 0 ? (r.d - rows[i - 1].d) / 2 : 0, b = i < rows.length - 1 ? (rows[i + 1].d - r.d) / 2 : 0;
+      return a + b || 1;
+    });
+  }
+
+  async function rtWeather() {
+    if (!RT) return;
+    const t0 = new Date($("rtStart").value).getTime(), v = num("rtSpeed");
+    if (!isFinite(t0)) { rtSay("Imposta data e ora di partenza per leggere il meteo lungo il percorso."); return; }
+    if (!(v >= 4 && v <= 60)) { rtSay("Imposta una velocità media tra 4 e 60 km/h."); return; }
+    if (t0 > Date.now() + 15.5 * 864e5) { RT.wx = null; rtRender(); rtSay("Le previsioni arrivano a 16 giorni: scegli una partenza più vicina. Il fondo è già calcolato; condizioni e temperatura vanno impostate a mano."); return; }
+    if (!navigator.onLine) { rtSay("Sei offline: il fondo del percorso è applicato, il meteo no. Imposta condizioni e temperatura a mano."); return; }
+    const ms = (d) => d / (v / 3.6) * 1000, tEnd = t0 + ms(RT.dist), day = (x) => new Date(x).toISOString().slice(0, 10);
+    const u = "https://api.open-meteo.com/v1/forecast?latitude=" + RT.pts.map((p) => p.lat).join(",") +
+      "&longitude=" + RT.pts.map((p) => p.lon).join(",") +
+      "&hourly=temperature_2m,precipitation,weather_code&timezone=GMT&start_date=" + day(t0 - 864e5) + "&end_date=" + day(tEnd + 36e5);
+    rtBusy(true); rtSay("Leggo le previsioni nei punti e alle ore in cui passerai…");
+    try {
+      const r = await fetch(u); if (!r.ok) throw new Error("HTTP " + r.status);
+      let d = await r.json(); if (!Array.isArray(d)) d = [d];
+      const rows = RT.pts.map((p, i) => {
+        const h = d[i].hourly, ts = h.time.map((t) => Date.parse(t + ":00Z")), eta = t0 + ms(p.d);
+        let k = ts.findIndex((x) => x > eta) - 1; if (k < 0) k = ts.length - 1;
+        const k1 = Math.min(k + 1, ts.length - 1), fr = ts[k1] > ts[k] ? Math.max(0, Math.min(1, (eta - ts[k]) / (ts[k1] - ts[k]))) : 0;
+        const a = h.temperature_2m[k], b = h.temperature_2m[k1];
+        const temp = a == null ? NaN : b == null ? a : a + (b - a) * fr;
+        let r12 = 0; for (let q = 0; q < ts.length; q++) if (ts[q] <= eta + 36e5 && ts[q] > eta - 12 * 36e5) r12 += +h.precipitation[q] || 0;
+        const pNow = Math.max(+h.precipitation[k] || 0, +h.precipitation[k1] || 0);
+        const st = isFinite(temp) ? wxState(+h.weather_code[k1], pNow, r12) : "nd";
+        return { d: p.d, eta, temp, r12, st };
+      });
+      const w = weights(rows), ok = rows.map((r) => r.st !== "nd");
+      const W = w.reduce((s, x, i) => s + (ok[i] ? x : 0), 0);
+      if (!W) throw new Error("previsioni non disponibili per quelle ore");
+      const share = (f) => rows.reduce((s, r, i) => s + (ok[i] && f(r) ? w[i] : 0), 0) / W;
+      const wet = share((r) => r.st === "wet"), damp = share((r) => r.st === "damp");
+      const tMean = rows.reduce((s, r, i) => s + (ok[i] ? r.temp * w[i] : 0), 0) / W;
+      const tot = Object.values(RT.by).reduce((a, b) => a + b, 0) || 1;
+      const dirt = (RT.by.compact + RT.by.loose) / tot, maxR = Math.max(...rows.map((r) => r.r12));
+      let cond = "1.00";
+      if (wet >= 0.3 && dirt >= 0.4 && maxR >= 10) cond = "0.86";
+      else if (wet >= 0.3) cond = "0.90";
+      else if (wet + damp >= 0.3) cond = "0.95";
+      setRadio("wet", cond);
+      $("tOut").value = Math.round(tMean);
+      RT.wx = rows; RT.wxAt = Date.now(); RT.start = $("rtStart").value; RT.speed = $("rtSpeed").value;
+      rtSave(); rtRender(); compute();
+      const temps = rows.filter((r, i) => ok[i]).map((r) => r.temp);
+      rtSay("Meteo lungo il percorso: " + fmt(Math.min(...temps), 0) + "–" + fmt(Math.max(...temps), 0) + " °C (media " + fmt(tMean, 0) + " °C), " +
+        (wet > 0 ? fmt(wet * 100, 0) + "% dei km su fondo bagnato, " : "") + (damp > 0 ? fmt(damp * 100, 0) + "% umido, " : "") +
+        "arrivo previsto alle " + new Date(tEnd).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) + ". Condizioni impostate su " +
+        { "1.00": "asciutto", "0.95": "umido", "0.90": "bagnato", "0.86": "fango" }[cond] + "." +
+        (RT.surfSrc ? "" : " Il tipo di fondo non è disponibile per questo percorso: sceglilo tu in Fondo stradale."));
+    } catch (e) {
+      rtSay("Non riesco a leggere il meteo del percorso (" + e.message + "). Il fondo è applicato; imposta condizioni e temperatura a mano.");
+    } finally { rtBusy(false); }
+  }
+
+  // --- applicazione al calcolo ---
+  function surfFactor(by) { let s = 0, w = 0; for (const [c, , f] of CLS) if (f != null) { s += (by[c] || 0) * f; w += by[c] || 0; } return w > 0 ? s / w : null; }
+  function applySurface() {
+    const r = $("s7"), l = $("s7l"), f = RT ? surfFactor(RT.by) : null;
+    if (f == null) { r.hidden = l.hidden = true; if (r.checked) { const p = $(rtPrevSurf || "s5"); if (p) p.checked = true; } return; }
+    const cur = radio("surf"); if (cur && cur.id !== "s7") rtPrevSurf = cur.id;
+    const tot = RT.by.smooth + RT.by.rough + RT.by.compact + RT.by.loose;
+    r.value = f.toFixed(4); r.hidden = l.hidden = false; r.checked = true;
+    l.textContent = "Dal percorso: " + fmt((RT.by.smooth + RT.by.rough) / tot * 100, 0) + "% asfalto, " + fmt((RT.by.compact + RT.by.loose) / tot * 100, 0) + "% sterrato";
+  }
+  async function rtSet(k, src) {
+    const cum = k.cum || cumul(k.pts);
+    let by = k.by || emptyBy(), surfSrc = src;
+    const known = by.smooth + by.rough + by.compact + by.loose;
+    if (!known) {
+      rtSay("Ricavo il tipo di fondo dalle mappe OpenStreetMap…");
+      try { by = await osmClasses(k.pts, cum, (g, n) => rtSay("Ricavo il tipo di fondo dalle mappe OpenStreetMap… (" + Math.round(g / n * 100) + "%)")); surfSrc = "OpenStreetMap"; }
+      catch (e) { by = emptyBy(); by.unk = cum[cum.length - 1]; surfSrc = null; }
+    }
+    const dist = cum[cum.length - 1];
+    RT = { name: k.name || "Percorso", src, surfSrc, dist, up: Math.round(k.up != null ? k.up : climb(k.pts)), by, pts: wxPoints(k.pts, cum), wx: null };
+    if (k.dur > 0) $("rtSpeed").value = fmt(Math.max(8, Math.min(40, dist / k.dur * 3.6)), 1);
+    if (!$("rtStart").value || new Date($("rtStart").value).getTime() < Date.now() - 36e5) $("rtStart").value = localISO(nextHour());
+    applySurface(); rtSave(); rtRender(); compute();
+    if (!surfSrc) rtSay("Non riesco a ricavare il fondo per questo percorso: scegli tu il fondo stradale. Leggo comunque il meteo…");
+    await rtWeather();
+  }
+  async function rtFromKomoot() {
+    const ref = parseKomoot($("rtUrl").value);
+    if (!ref) { rtSay("Incolla il link di un percorso Komoot, del tipo https://www.komoot.com/it-it/tour/123456789."); return; }
+    if (!navigator.onLine) { rtSay("Sei offline: per scaricare il percorso serve la connessione."); return; }
+    rtBusy(true); rtSay("Scarico il percorso da Komoot…");
+    try { const k = await fetchKomoot(ref); rtBusy(false); await rtSet(k, "Komoot"); }
+    catch (e) {
+      const m = e.message;
+      rtSay(m === "PRIVATO" ? (KA ? "Komoot non concede l'accesso a questo percorso con il tuo account. Prova a scollegare e ricollegare l'account, o carica il GPX." : "Il percorso è privato: collega il tuo account Komoot qui sotto, oppure usa un link di invito (Condividi), oppure carica il file GPX.")
+        : m === "NONTROVATO" ? "Percorso non trovato: controlla il link." : m === "VUOTO" ? "Il percorso non contiene punti." : "Non riesco a scaricare il percorso (" + m + "). Riprova, oppure carica il file GPX.");
+    } finally { rtBusy(false); }
+  }
+  async function rtFromGPX(file) {
+    if (!file) return;
+    rtBusy(true); rtSay("Leggo il file " + file.name + "…");
+    try { const g = parseGPX(await file.text()); rtBusy(false); await rtSet(g, "GPX"); }
+    catch (e) { rtSay("Il file non sembra un GPX valido con una traccia. In Komoot: apri il percorso › Scarica › GPX."); }
+    finally { rtBusy(false); $("rtGpx").value = ""; }
+  }
+  function rtClear() {
+    RT = null; try { localStorage.removeItem(RT_KEY); } catch (e) {}
+    applySurface(); rtRender(); rtSay(""); compute(); wxAuto();
+  }
+  function rtSave() { try { if (RT) localStorage.setItem(RT_KEY, JSON.stringify({ RT, url: $("rtUrl").value, start: $("rtStart").value, speed: $("rtSpeed").value })); } catch (e) {} }
+  function rtRestore() {
+    try {
+      const s = JSON.parse(localStorage.getItem(RT_KEY) || "null"); if (!s || !s.RT) return;
+      RT = s.RT; $("rtUrl").value = s.url || ""; $("rtSpeed").value = s.speed || $("rtSpeed").value;
+      $("rtStart").value = s.start && new Date(s.start).getTime() > Date.now() - 6 * 36e5 ? s.start : localISO(nextHour());
+      applySurface(); rtRender();
+    } catch (e) { RT = null; }
+  }
+
+  // --- presentazione ---
+  function rtRender() {
+    const box = $("rtRes"); if (!RT) { box.hidden = true; return; }
+    box.hidden = false;
+    const tot = Object.values(RT.by).reduce((a, b) => a + b, 0) || 1;
+    $("rtName").textContent = RT.name;
+    $("rtMeta").innerHTML = "<span>" + fmt(RT.dist / 1000, 1) + " km</span><span>dislivello +" + fmt(RT.up, 0) + " m</span><span>percorso: " + RT.src + "</span><span>fondo: " + (RT.surfSrc || "non disponibile") + "</span>";
+    $("rtBar").innerHTML = CLS.filter((c) => RT.by[c[0]] > 0).map((c) => '<span style="width:' + (RT.by[c[0]] / tot * 100).toFixed(2) + '%;background:var(--c-' + c[0] + ')"></span>').join("");
+    $("rtLeg").innerHTML = CLS.filter((c) => RT.by[c[0]] > 0).map((c) => '<i class="sw" style="background:var(--c-' + c[0] + ')"></i><span>' + c[1] + "</span><span>" + fmt(RT.by[c[0]] / 1000, 1) + " km · " + fmt(RT.by[c[0]] / tot * 100, 0) + "%</span>").join("");
+    if (RT.wx) {
+      const d0 = new Date(RT.wx[0].eta).toDateString();
+      $("rtWxTab").innerHTML = "<table><thead><tr><th>km</th><th>Ora</th><th>°C</th><th>Pioggia 12 h</th><th>Fondo</th></tr></thead><tbody>" +
+        RT.wx.map((r) => { const t = new Date(r.eta), hh = t.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+          return "<tr><td>" + fmt(r.d / 1000, 1) + "</td><td>" + (t.toDateString() !== d0 ? t.toLocaleDateString("it-IT", { weekday: "short" }) + " " : "") + hh + "</td><td>" + (isFinite(r.temp) ? fmt(r.temp, 1) : "—") + "</td><td>" + fmt(r.r12, 1) + " mm</td><td><span class=\"pill " + r.st + "\">" + ST_IT[r.st] + "</span></td></tr>"; }).join("") +
+        "</tbody></table>";
+      $("rtWxTab").hidden = false;
+    } else { $("rtWxTab").innerHTML = ""; $("rtWxTab").hidden = true; }
+  }
+  function routeExtras(common, cap) {
+    const el = $("rtPress"); if (!el) return;
+    if (!RT || surfFactor(RT.by) == null) { el.innerHTML = ""; return; }
+    const at = (f) => ["F", "R"].map((pos) => Math.min(cap, calcWheel(pos, Object.assign({}, common, { surf: f, tw: num("tw" + pos), casing: $("tc" + pos).value })).bar));
+    const row = (lab, f, em) => { const [a, b] = at(f); return "<span" + (em ? ' class="em"' : "") + ">" + lab + "</span><span" + (em ? ' class="em"' : "") + ">" + fmt(a, 2) + "</span><span" + (em ? ' class="em"' : "") + ">" + fmt(b, 2) + "</span>"; };
+    const tot = Object.values(RT.by).reduce((a, b) => a + b, 0) || 1;
+    el.innerHTML = '<span class="h">Pressione [bar]</span><span class="h">Ant.</span><span class="h">Post.</span>' +
+      row("Per questo percorso", surfFactor(RT.by), true) + row("Se fosse tutto asfalto", 1.00) + row("Se fosse tutto sterrato compatto", 0.90) +
+      (RT.by.unk / tot > 0.25 ? '<span style="grid-column:1/-1;color:var(--muted);font-size:.8rem">Fondo non noto per il ' + fmt(RT.by.unk / tot * 100, 0) + "% dei km: escluso dalla media.</span>" : "");
+  }
+
+
+  // --- account Komoot (accesso facoltativo per i percorsi privati) ---
+  // La password va solo a Komoot; sul telefono resta il codice di accesso che Komoot restituisce.
+  const KA_KEY = "pressione-gomme-komoot";
+  let KA = null; // { uid, token, name }
+  try { KA = JSON.parse(localStorage.getItem(KA_KEY) || "null"); } catch (e) { KA = null; }
+  const kHead = () => ({ Authorization: "Basic " + btoa(KA.uid + ":" + KA.token) });
+  function kaSay(t) { $("kaOut").textContent = t; }
+  function kaRender() {
+    $("kaLogin").hidden = !!KA; $("kaIn").hidden = !KA;
+    if (KA) $("kaWho").textContent = "Collegato come " + (KA.name || KA.uid);
+  }
+  async function kaConnect() {
+    const email = $("kaEmail").value.trim(), pw = $("kaPw").value;
+    if (!email || !pw) { kaSay("Scrivi email e password del tuo account Komoot."); return; }
+    if (!navigator.onLine) { kaSay("Sei offline: per collegare l'account serve la connessione."); return; }
+    $("kaGo").disabled = true; kaSay("Collego l'account…");
+    try {
+      const r = await fetch("https://api.komoot.de/v006/account/email/" + encodeURIComponent(email) + "/", { headers: { Authorization: "Basic " + btoa(unescape(encodeURIComponent(email + ":" + pw))) } });
+      if (r.status === 401 || r.status === 403) throw new Error("CRED");
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const j = await r.json();
+      if (!j.username || !j.password) throw new Error("risposta inattesa");
+      KA = { uid: String(j.username), token: j.password, name: (j.user && j.user.displayname) || "" };
+      try { localStorage.setItem(KA_KEY, JSON.stringify(KA)); } catch (e) {}
+      $("kaPw").value = ""; kaRender(); kaSay(""); await kaList();
+    } catch (e) {
+      kaSay(e.message === "CRED" ? "Email o password non corrette. Se accedi a Komoot con Google, Apple o Facebook, devi prima impostare una password nelle impostazioni dell'account Komoot." : "Collegamento non riuscito (" + e.message + "). Riprova più tardi.");
+    } finally { $("kaGo").disabled = false; $("kaPw").value = ""; }
+  }
+  async function kaList() {
+    if (!KA) return;
+    if (!navigator.onLine) { kaSay("Sei offline: elenco dei percorsi non aggiornato."); return; }
+    kaSay("Leggo i tuoi percorsi…");
+    try {
+      const r = await fetch("https://api.komoot.de/v007/users/" + KA.uid + "/tours/?type=" + $("kaType").value + "&sort_field=date&sort_direction=desc&page=0&limit=50", { headers: kHead() });
+      if (r.status === 401 || r.status === 403) { kaOut(); kaSay("L'accesso a Komoot è scaduto: collega di nuovo l'account."); return; }
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const j = await r.json(), list = (j._embedded && j._embedded.tours) || [];
+      const sel = $("kaTours");
+      sel.innerHTML = list.length ? list.map((t) => '<option value="' + t.id + '">' + String(t.name || "Senza nome").replace(/[<&"]/g, (c) => ({ "<": "&lt;", "&": "&amp;", '"': "&quot;" }[c])) + " · " + fmt((t.distance || 0) / 1000, 0) + " km</option>").join("") : '<option value="">Nessun percorso trovato</option>';
+      kaSay(list.length ? list.length + " percorsi trovati: scegline uno e tocca Carica." : "");
+    } catch (e) { kaSay("Non riesco a leggere i percorsi (" + e.message + ")."); }
+  }
+  async function kaLoad() {
+    const id = $("kaTours").value; if (!id) return;
+    rtBusy(true); rtSay("Scarico il percorso da Komoot…");
+    try { const k = await fetchKomoot({ id }); rtBusy(false); $("rtUrl").value = "https://www.komoot.com/tour/" + id; await rtSet(k, "Komoot"); }
+    catch (e) { rtSay(e.message === "PRIVATO" ? "Komoot non concede l'accesso a questo percorso: prova a collegare di nuovo l'account." : "Non riesco a scaricare il percorso (" + e.message + ")."); }
+    finally { rtBusy(false); }
+  }
+  function kaOut() { KA = null; try { localStorage.removeItem(KA_KEY); } catch (e) {} $("kaTours").innerHTML = ""; kaRender(); kaSay("Account scollegato: sul telefono non resta nessun dato di accesso."); }
+  $("kaGo").addEventListener("click", kaConnect);
+  $("kaPw").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); kaConnect(); } });
+  $("kaRefresh").addEventListener("click", kaList);
+  $("kaType").addEventListener("change", kaList);
+  $("kaLoadBtn").addEventListener("click", kaLoad);
+  $("kaLogout").addEventListener("click", kaOut);
+  kaRender(); if (KA) kaList();
+
+  $("rtLoad").addEventListener("click", rtFromKomoot);
+  $("rtUrl").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); rtFromKomoot(); } });
+  $("rtGpxBtn").addEventListener("click", () => $("rtGpx").click());
+  $("rtGpx").addEventListener("change", (e) => rtFromGPX(e.target.files && e.target.files[0]));
+  $("rtWx").addEventListener("click", rtWeather);
+  $("rtClear").addEventListener("click", rtClear);
+  ["rtStart", "rtSpeed"].forEach((id) => $(id).addEventListener("change", () => { if (RT) { rtSave(); rtWeather(); } }));
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && RT && (!RT.wxAt || Date.now() - RT.wxAt > 20 * 60e3)) rtWeather(); });
 
   // ---------- Funzionamento offline ----------
   if ("serviceWorker" in navigator) { window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {})); }
 
   load();
+  rtRestore();
+  if (!$("rtStart").value) $("rtStart").value = localISO(nextHour());
   setupSearch("F"); setupSearch("R");
   $("form").addEventListener("input", (e) => { if (!e.target.matches('[role="combobox"]')) compute(); });
   $("form").addEventListener("change", (e) => { if (!e.target.matches('[role="combobox"]')) compute(); });
@@ -682,7 +1177,7 @@ M = peso totale [kg]   D = diametro ISO [mm]</div>
   $("form").addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.matches('input[inputmode]')) { e.preventDefault(); e.target.blur(); } });
   $("same").addEventListener("change", () => { if (!$("same").checked) { sel.R = sel.R || sel.F; $("tsR").value = sel.R ? sel.R.name : ""; } compute(); });
   compute();
-  wxAuto();
+  if (RT) rtWeather(); else wxAuto();
 })();
 </script>
 </body>
